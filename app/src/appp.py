@@ -413,9 +413,9 @@ with c2:
     else: st.write("None found.")
 
 st.markdown("---")
-st.subheader("Adjacency List (JSON)")
+# st.subheader("Adjacency List (JSON)")
 adj_serial = {u: [[v,w,mode] for v,w,mode in ADJ[u]] for u in ADJ}
-st.code(json.dumps(adj_serial, indent=2))
+# st.code(json.dumps(adj_serial, indent=2))
 
 st.markdown("#### Adjacency Matrix (sample)")
 mat_df = adjacency_matrix(ADJ)
