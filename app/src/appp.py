@@ -90,7 +90,7 @@ def normalize_undirected(adj: Dict[str, List[Tuple]]) -> Dict[str, List[Tuple]]:
         g[u]=dedup
     return g
 
-use_default = st.sidebar.checkbox("Use built-in graph (recommended)", value=True)
+use_default = st.sidebar.checkbox("Using graph nodes (Baltimore City Nodes ---> Abstract Layout)", value=True)
 if use_default:
     ADJ = normalize_undirected(DEFAULT_ADJ)
 else:
@@ -465,5 +465,5 @@ st.download_button("Download Project Report (txt)", data=report_txt.encode("utf-
                    file_name="project_report.txt", mime="text/plain")
 
 st.markdown("---")
-st.caption("Notes: For interactive click-to-add inside Streamlit install streamlit-folium. For Google Maps live travel times supply an API key. GTFS parser uses stops.txt/stop_times.txt to add sequential stop edges.")
+st.caption("Extension of this project: Live stream of busy node")
 
