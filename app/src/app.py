@@ -1,8 +1,7 @@
-# app.py
 import streamlit as st
 import json
 from heapq import heappush, heappop
-from typing import Dict, List, Tuple, Set, Optional
+from typing import Dict, List, Tuple, Optional
 import pandas as pd
 import numpy as np
 import folium
@@ -22,15 +21,14 @@ except Exception:
 st.set_page_config(page_title="Baltimore Transit — Geo Graph + Dijkstra + Critical Points", layout="wide")
 st.title("Baltimore Inner Harbor — Geo Graph + Dijkstra + Critical Points")
 
-
 NODE_NAMES = {
     "P": "Penn Station (Transit Hub)",
     "A": "National Aquarium",
-    "F": "Fort McHenry",
     "B": "M&T Bank Stadium",
     "C": "Convention Center (Light Rail Stop)",
     "D": "Fells Point",
     "E": "Federal Hill",
+    "F": "Fort McHenry",
     "G": "Harbor East",
     "H": "Harbor Point",
     "I": "Inner Harbor (Harborplace)",
@@ -46,27 +44,14 @@ NODE_NAMES = {
 }
 
 NODE_COORDS = {
-    "P": (39.3079, -76.6157),
-    "A": (39.2857, -76.6081),
-    "F": (39.2813, -76.5803),
-    "B": (39.2839, -76.6217),
-    "C": (39.2851, -76.6187),
-    "D": (39.2830, -76.6050),
-    "E": (39.2789, -76.6120),
-    "G": (39.2833, -76.6026),
-    "H": (39.2784, -76.6000),
-    "I": (39.2850, -76.6132),
-    "J": (39.2913, -76.6052),
-    "K": (39.2708, -76.5930),
-    "L": (39.2867, -76.6030),
-    "M": (39.3009, -76.6158),
-    "O": (39.2821, -76.6188),
-    "Q": (39.2911, -76.6208),
-    "R": (39.2847, -76.6220),
-    "S": (39.2930, -76.6140),
+    "P": (39.3079, -76.6157),"A": (39.2857, -76.6081),"F": (39.2813, -76.5803),
+    "B": (39.2839, -76.6217),"C": (39.2851, -76.6187),"D": (39.2830, -76.6050),
+    "E": (39.2789, -76.6120),"G": (39.2833, -76.6026),"H": (39.2784, -76.6000),
+    "I": (39.2850, -76.6132),"J": (39.2913, -76.6052),"K": (39.2708, -76.5930),
+    "L": (39.2867, -76.6030),"M": (39.3009, -76.6158),"O": (39.2821, -76.6188),
+    "Q": (39.2911, -76.6208),"R": (39.2847, -76.6220),"S": (39.2930, -76.6140),
     "T": (39.2844, -76.6105)
 }
-
 
 DEFAULT_ADJ = {
     "P": [("M", 6, "walk"), ("L", 8, "walk"), ("C", 12, "walk"), ("S", 10, "walk")],
@@ -75,8 +60,7 @@ DEFAULT_ADJ = {
     "Q": [("L", 10, "walk"), ("C", 7, "walk")],
     "C": [("A", 3, "walk"), ("T", 2, "walk"), ("B", 10, "walk"), ("D", 9, "walk"),
           ("E", 7, "walk"), ("G", 8, "walk"), ("I", 5, "walk"), ("R", 5, "walk"), ("S", 8, "walk"), ("P", 12, "walk")],
-    "A": [("C", 3, "walk")],
-    "T": [("C", 2, "walk"), ("F", 20, "water_taxi")],
+    "A": [("C", 3, "walk")],"T": [("C", 2, "walk"), ("F", 20, "water_taxi")],
     "F": [("T", 20, "water_taxi")],
     "B": [("M", 9, "light_rail"), ("C", 10, "walk"), ("J", 4, "walk"), ("K", 6, "walk")],
     "J": [("B", 4, "walk"), ("K", 6, "walk")],
@@ -106,8 +90,7 @@ def normalize_undirected(adj: Dict[str, List[Tuple]]) -> Dict[str, List[Tuple]]:
         g[u]=dedup
     return g
 
-# st.sidebar.header("Graph Data")
-use_default = st.sidebar.checkbox("Use built-in graph (recommended)", value=True)
+use_default = st.sidebar.checkbox("Using graph nodes (Baltimore City Nodes ---> Abstract Layout)", value=True)
 if use_default:
     ADJ = normalize_undirected(DEFAULT_ADJ)
 else:
@@ -119,39 +102,35 @@ else:
         st.sidebar.error(f"Invalid JSON: {e}")
         ADJ = normalize_undirected(DEFAULT_ADJ)
 
-st.sidebar.header("Route & Simulation Controls")
 NODES = sorted(ADJ.keys())
 src = st.sidebar.selectbox("Source", NODES, index=NODES.index("P") if "P" in NODES else 0)
 tgt = st.sidebar.selectbox("Target", NODES, index=NODES.index("A") if "A" in NODES else 0)
 compute_button = st.sidebar.button("Compute shortest path & analyze")
 
 failure_mode = st.sidebar.selectbox("Simulate failure:", ["None", "Remove Edge", "Remove Node"])
-fail_edge = None
-fail_node = None
+fail_edge = None; fail_node = None
 if failure_mode=="Remove Edge":
-    edges_flat=[]
-    seen=set()
+    edges_flat=[]; seen=set()
     for u in sorted(ADJ.keys()):
         for v,w,mode in ADJ[u]:
             a,b=sorted((u,v))
             if (a,b) not in seen:
-                seen.add((a,b))
-                edges_flat.append(f"{a} - {b} ({w}m, {mode})")
+                seen.add((a,b)); edges_flat.append(f"{a} - {b} ({w}m, {mode})")
     chosen = st.sidebar.selectbox("Edge to remove", edges_flat)
     uu = chosen.split()[0]; vv = chosen.split()[2]; fail_edge=(uu,vv)
 elif failure_mode=="Remove Node":
     fail_node = st.sidebar.selectbox("Node to remove", NODES)
 
-# **Only one checkbox per option**
 show_ap = st.sidebar.checkbox("Show articulation points", True, key="show_ap")
 show_bridges = st.sidebar.checkbox("Show bridges", True, key="show_bridges")
 show_all_edges = st.sidebar.checkbox("Show all edges", True, key="show_all_edges")
 animate_path = st.sidebar.checkbox("Animate shortest-path (AntPath)", True, key="animate_path")
 show_arrows = st.sidebar.checkbox("Show direction arrows on edges", True, key="show_arrows")
-use_live_gmaps = st.sidebar.checkbox("Use Google Maps to refresh edge weights (for shown edges)", value=False, key="use_live_gmaps") and use_gmaps
-
-
-
+st.sidebar.header("GTFS / Live Data")
+uploaded_gtfs = st.sidebar.file_uploader("Upload GTFS ZIP (optional)", type=["zip"])
+gmaps_key = st.sidebar.text_input("Google Maps API Key (optional, for live times)", type="password")
+use_gmaps = bool(gmaps_key.strip())
+use_live_gmaps = st.sidebar.checkbox("Use Google Maps to refresh edge weights (for shown edges)", value=False) and use_gmaps
 
 def adjacency_matrix(adj: Dict[str, List[Tuple]]) -> pd.DataFrame:
     nodes = sorted(adj.keys()); n=len(nodes)
@@ -203,37 +182,6 @@ def find_bridges_and_articulation_points(adj):
     bridges_norm=[tuple(sorted((u,v))) for u,v in bridges]; bridges_norm=sorted(list(set(bridges_norm)))
     return sorted(list(ap_set)), bridges_norm
 
-st.sidebar.header("Route & Simulation Controls")
-NODES = sorted(ADJ.keys())
-src = st.sidebar.selectbox("Source", NODES, index=NODES.index("P") if "P" in NODES else 0)
-tgt = st.sidebar.selectbox("Target", NODES, index=NODES.index("A") if "A" in NODES else 0)
-compute_button = st.sidebar.button("Compute shortest path & analyze")
-
-failure_mode = st.sidebar.selectbox("Simulate failure:", ["None", "Remove Edge", "Remove Node"])
-fail_edge = None; fail_node = None
-if failure_mode=="Remove Edge":
-    edges_flat=[]; seen=set()
-    for u in sorted(ADJ.keys()):
-        for v,w,mode in ADJ[u]:
-            a,b=sorted((u,v))
-            if (a,b) not in seen:
-                seen.add((a,b)); edges_flat.append(f"{a} - {b} ({w}m, {mode})")
-    chosen = st.sidebar.selectbox("Edge to remove", edges_flat)
-    uu = chosen.split()[0]; vv = chosen.split()[2]; fail_edge=(uu,vv)
-elif failure_mode=="Remove Node":
-    fail_node = st.sidebar.selectbox("Node to remove", NODES)
-
-show_ap = st.sidebar.checkbox("Show articulation points", True, key="show_ap_1")
-show_bridges = st.sidebar.checkbox("Show bridges", True, key="show_bridges")
-show_all_edges = st.sidebar.checkbox("Show all edges", True)
-
-st.sidebar.markdown("---")
-st.sidebar.header("GTFS / Live Data")
-uploaded_gtfs = st.sidebar.file_uploader("Upload GTFS ZIP (optional)", type=["zip"])
-gmaps_key = st.sidebar.text_input("Google Maps API Key (optional, for live times)", type="password")
-use_gmaps = bool(gmaps_key.strip())
-
-
 def parse_gtfs_add_edges(gtfs_bytes, adj):
     z = zipfile.ZipFile(io.BytesIO(gtfs_bytes))
     files = z.namelist()
@@ -246,42 +194,34 @@ def parse_gtfs_add_edges(gtfs_bytes, adj):
     if "stop_id" in stops.columns and "stop_lat" in stops.columns and "stop_lon" in stops.columns:
         for _,row in stops.iterrows():
             stop_map[row["stop_id"]] = (row["stop_lat"], row["stop_lon"], row.get("stop_name", ""))
-   
     for trip_id, grp in stop_times.groupby("trip_id"):
         grp_sorted = grp.sort_values("stop_sequence")
         seq = list(grp_sorted["stop_id"])
-      
         for i in range(len(seq)-1):
             s1, s2 = seq[i], seq[i+1]
             if s1 in stop_map and s2 in stop_map:
                 lat1, lon1, name1 = stop_map[s1]
                 lat2, lon2, name2 = stop_map[s2]
-               
                 for sid,lat,lon,name in [(s1,lat1,lon1,name1),(s2,lat2,lon2,name2)]:
                     if sid not in adj:
                         adj[sid]=[(None,0,"walk")]
-                  
                         NODE_COORDS[sid] = (lat, lon)
                         NODE_NAMES[sid] = name if name else sid
-               
                 try:
                     t1 = grp_sorted.iloc[i]["departure_time"]
                     t2 = grp_sorted.iloc[i+1]["arrival_time"]
-               
                     def to_minutes(t):
                         h,m,s = map(int, t.split(":"))
                         return h*60 + m + s/60.0
                     w = max(1.0, to_minutes(t2) - to_minutes(t1))
                 except Exception:
                     w = 5.0
-              
                 adj.setdefault(seq[i], [])
                 adj.setdefault(seq[i+1], [])
                 adj[seq[i]].append((seq[i+1], w, "gtfs"))
                 adj[seq[i+1]].append((seq[i], w, "gtfs"))
     st.success("GTFS parsed and edges added (stop_ids used as node labels).")
     return adj
-
 
 def gmaps_travel_time(origin_latlon, dest_latlon, api_key):
     try:
@@ -292,20 +232,17 @@ def gmaps_travel_time(origin_latlon, dest_latlon, api_key):
         resp = requests.get(url, params=params, timeout=10)
         data = resp.json()
         if data.get("routes"):
-            total_sec = 0
-            for leg in data["routes"][0]["legs"]:
-                total_sec += leg.get("duration", {}).get("value", 0)
+            total_sec = sum(leg.get("duration", {}).get("value", 0) for leg in data["routes"][0]["legs"])
             return total_sec / 60.0
         else:
-        
             params["mode"] = "walking"
             resp = requests.get(url, params=params, timeout=10)
             data = resp.json()
             if data.get("routes"):
                 total_sec = sum(leg.get("duration", {}).get("value", 0) for leg in data["routes"][0]["legs"])
                 return total_sec / 60.0
-    except Exception as e:
-        st.warning(f"Google Maps request failed: {e}")
+    except Exception:
+        return None
     return None
 
 if uploaded_gtfs is not None:
@@ -316,21 +253,8 @@ if uploaded_gtfs is not None:
     except Exception as e:
         st.sidebar.error(f"Failed to parse GTFS: {e}")
 
-st.sidebar.markdown("---")
-st.sidebar.header("Interactive map editing")
-st.sidebar.write("Click map to add a new node (label auto-generated). Requires `streamlit-folium` to capture clicks inside Streamlit.")
-if not STREAMLIT_FOLIUM_AVAILABLE:
-    st.sidebar.warning("Install streamlit-folium to enable click-to-add: `pip install streamlit-folium`")
-
 new_node_label = st.sidebar.text_input("New node label (optional)", value="")
 new_node_name = st.sidebar.text_input("New node name (optional)", value="")
-
-
-show_ap = st.sidebar.checkbox("Show articulation points", True, key="show_ap_2")
-show_bridges = st.sidebar.checkbox("Show bridges", True)
-animate_path = st.sidebar.checkbox("Animate shortest-path (AntPath)", True)
-show_arrows = st.sidebar.checkbox("Show direction arrows on edges", True)
-use_live_gmaps = st.sidebar.checkbox("Use Google Maps to refresh edge weights (for shown edges)", value=False) and use_gmaps
 
 def remove_edge(adj, u, v):
     newadj = {k:[(x,y,z) for x,y,z in lst] for k,lst in adj.items() for k in [k]}
@@ -345,9 +269,7 @@ def remove_node(adj, node):
         newadj[u]=[(v,w,mode) for v,w,mode in lst if v!=node]
     return newadj
 
-
 base_ap, base_bridges = find_bridges_and_articulation_points(ADJ)
-
 
 MODE_COLOR = {"walk": "blue", "light_rail": "red", "water_taxi": "cyan", "gtfs": "purple", "unknown": "gray"}
 
@@ -357,13 +279,11 @@ def build_map(adj: Dict[str, List[Tuple]], highlight_path: Optional[List[str]]=N
     center=[39.2904, -76.6122]
     m = folium.Map(location=center, zoom_start=14, tiles="cartodbpositron")
     Draw(export=True, filename='data.geojson').add_to(m)
-
     weights = [w for u in adj for _,w,_ in adj[u]] or [1]
     min_w, max_w = min(weights), max(weights)
     def stroke(w):
         if max_w==min_w: return 3
         return 2 + 6*((w-min_w)/(max_w-min_w))
-
     seen=set()
     for u in adj:
         if u not in NODE_COORDS: continue
@@ -383,7 +303,6 @@ def build_map(adj: Dict[str, List[Tuple]], highlight_path: Optional[List[str]]=N
                     PolyLineTextPath(line, " ➤ ", repeat=True, offset=8, attributes={'fill':'black','font-weight':'bold','font-size':'14'}).add_to(m)
                 except Exception:
                     pass
-
     if highlight_path and len(highlight_path)>=2:
         path_coords = [NODE_COORDS[n] for n in highlight_path if n in NODE_COORDS]
         if animate:
@@ -410,7 +329,6 @@ def build_map(adj: Dict[str, List[Tuple]], highlight_path: Optional[List[str]]=N
                       icon=folium.DivIcon(html=f"""<div style="font-size:13px;font-weight:bold;color:black;background:{bg};
                                               border:1px solid #222;border-radius:4px;padding:4px 6px;text-align:center;min-width:20px">{node}</div>""")
                      ).add_to(m)
-
     return m
 
 adj_for_run = ADJ
@@ -423,34 +341,23 @@ elif failure_mode=="Remove Node" and fail_node:
     impact_text = f"Simulated removal of node {fail_node}: {NODE_NAMES.get(fail_node,fail_node)}"
 
 ap_list_run, bridges_run = find_bridges_and_articulation_points(adj_for_run)
-
 result_dist = {}; result_parent = {}; result_path: List[str]=[]
+
 if compute_button:
     if use_live_gmaps and use_gmaps:
-        st.sidebar.warning("Refreshing edge weights from Google Maps (this may be slow)...")
-        updated_adj = {}
+        updated_adj = {u:[] for u in adj_for_run}
         seen=set()
-        for u in list(adj_for_run.keys()):
-            updated_adj[u]=[]
         for u in adj_for_run:
             for v,w,mode in adj_for_run[u]:
                 a,b = sorted((u,v))
                 if (a,b) in seen: continue
                 seen.add((a,b))
-             
                 if u in NODE_COORDS and v in NODE_COORDS:
-                    new_w = gmaps_travel_time(NODE_COORDS[u], NODE_COORDS[v], gmaps_key)
-                    if new_w is None:
-                        new_w = w
-                 
-                    updated_adj.setdefault(u,[]); updated_adj.setdefault(v,[])
+                    new_w = gmaps_travel_time(NODE_COORDS[u], NODE_COORDS[v], gmaps_key) or w
                     updated_adj[u].append((v,new_w,mode)); updated_adj[v].append((u,new_w,mode))
                 else:
-                    updated_adj.setdefault(u,[]); updated_adj.setdefault(v,[])
                     updated_adj[u].append((v,w,mode)); updated_adj[v].append((u,w,mode))
         adj_for_run = updated_adj
-        st.sidebar.success("Edge weights refreshed (best-effort).")
-   
     if src not in adj_for_run or tgt not in adj_for_run:
         st.error("Source or target missing (removed in simulation).")
     else:
@@ -459,51 +366,33 @@ if compute_button:
             st.error(f"No path found from {src} to {tgt}. {impact_text}")
         else:
             result_path = reconstruct_path(result_parent, tgt)
-         
             base_dist, _ = dijkstra(ADJ, src)
             if base_dist.get(tgt, float('inf'))<float('inf'):
                 delta = result_dist[tgt] - base_dist[tgt]
-                if delta>0:
-                    impact_text = f"Travel time increased by {delta:.1f} min vs baseline."
-                elif delta==0:
-                    impact_text = f"No change vs baseline ({result_dist[tgt]:.1f} min)."
-                else:
-                    impact_text = f"Travel time decreased by {-delta:.1f} min vs baseline."
+                if delta>0: impact_text = f"Travel time increased by {delta:.1f} min vs baseline."
+                elif delta==0: impact_text = f"No change vs baseline ({result_dist[tgt]:.1f} min)."
+                else: impact_text = f"Travel time decreased by {-delta:.1f} min vs baseline."
 
+fmap = build_map(adj_for_run, highlight_path=result_path if compute_button else None,
+                 ap_list=ap_list_run if show_ap else None,
+                 bridges=bridges_run if show_bridges else None,
+                 arrows=show_arrows, animate=animate_path)
 
-with st.expander("Map & Visualization (interactive) — click to open"):
-    fmap = build_map(adj_for_run, highlight_path=result_path if compute_button else None,
-                     ap_list=ap_list_run if show_ap else None,
-                     bridges=bridges_run if show_bridges else None,
-                     arrows=show_arrows, animate=animate_path)
-    if STREAMLIT_FOLIUM_AVAILABLE:
-       
-        st.info("Click the map to add a node. When you click, a popup appears in this app with coordinates.")
-        map_data = st_folium(fmap, width=1000, height=700, returned_objects=["last_clicked", "all_drawings"])
-        last_click = map_data.get("last_clicked")
-        drawings = map_data.get("all_drawings")
-        if last_click:
-            lat = last_click["lat"]; lon = last_click["lng"]
-            st.sidebar.success(f"Clicked at: {lat:.6f}, {lon:.6f}")
-            if st.sidebar.button("Add node at clicked location"):
-                
-                label = new_node_label.strip() or f"N{len(NODE_COORDS)+1}"
-                name = new_node_name.strip() or label
-                NODE_COORDS[label] = (lat, lon)
-                NODE_NAMES[label] = name
-               
-                ADJ.setdefault(label, [])
-                st.experimental_rerun()
-        
-        if drawings:
-            st.write("Drawings captured (GeoJSON features):")
-            st.json(drawings)
-    else:
-     
-        st.warning("streamlit-folium not installed. Click-to-add is disabled inside Streamlit. To enable, run `pip install streamlit-folium`.")
-        map_html = fmap.get_root().render()
-        components.html(map_html, height=700)
-
+if STREAMLIT_FOLIUM_AVAILABLE:
+    map_data = st_folium(fmap, width=1000, height=700, returned_objects=["last_clicked", "all_drawings"])
+    last_click = map_data.get("last_clicked")
+    if last_click:
+        lat = last_click["lat"]; lon = last_click["lng"]
+        if st.sidebar.button("Add node at clicked location"):
+            label = new_node_label.strip() or f"N{len(NODE_COORDS)+1}"
+            name = new_node_name.strip() or label
+            NODE_COORDS[label] = (lat, lon)
+            NODE_NAMES[label] = name
+            ADJ.setdefault(label, [])
+            st.experimental_rerun()
+else:
+    map_html = fmap.get_root().render()
+    components.html(map_html, height=700)
 
 st.markdown("---")
 c1, c2 = st.columns([2,1])
@@ -536,11 +425,10 @@ with c2:
         for u,v in bridges_run: st.write(f"- {u} — {v}: {NODE_NAMES.get(u,u)} ↔ {NODE_NAMES.get(v,v)}")
     else: st.write("None found.")
 
-
 st.markdown("---")
-st.subheader("Adjacency List (JSON)")
+# st.subheader("Adjacency List (JSON)")
 adj_serial = {u: [[v,w,mode] for v,w,mode in ADJ[u]] for u in ADJ}
-st.code(json.dumps(adj_serial, indent=2))
+# st.code(json.dumps(adj_serial, indent=2))
 
 st.markdown("#### Adjacency Matrix (sample)")
 mat_df = adjacency_matrix(ADJ)
@@ -550,7 +438,6 @@ st.markdown("---")
 st.subheader("Export")
 st.download_button("Download adjacency JSON", data=json.dumps(adj_serial, indent=2).encode("utf-8"),
                    file_name="baltimore_adjacency.json", mime="application/json")
-
 
 report_lines=[]
 report_lines.append("Baltimore Inner Harbor Transit Graph — Project Report")
@@ -578,4 +465,5 @@ st.download_button("Download Project Report (txt)", data=report_txt.encode("utf-
                    file_name="project_report.txt", mime="text/plain")
 
 st.markdown("---")
-st.caption("Notes: For interactive click-to-add inside Streamlit install streamlit-folium. For Google Maps live travel times supply an API key. GTFS parser uses stops.txt/stop_times.txt to add sequential stop edges.")
+st.caption("Extension of this project: Live stream of busy node")
+
