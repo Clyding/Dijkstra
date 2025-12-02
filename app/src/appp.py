@@ -22,12 +22,25 @@ st.set_page_config(page_title="Baltimore Transit — Geo Graph + Dijkstra + Crit
 st.title("Baltimore Inner Harbor — Geo Graph + Dijkstra + Critical Points")
 
 NODE_NAMES = {
-    "P": "Penn Station (Transit Hub)","A": "National Aquarium","F": "Fort McHenry",
-    "B": "M&T Bank Stadium","C": "Convention Center (Light Rail Stop)","D": "Fells Point",
-    "E": "Federal Hill","G": "Harbor East","H": "Harbor Point","I": "Inner Harbor (Harborplace)",
-    "J": "Jonestown","K": "Locust Point / Ferry Area","L": "Little Italy","M": "Mount Vernon",
-    "O": "Oriole Park / Camden Yards (alt)","Q": "Lexington Market / Downtown","R": "Ridgely's Delight",
-    "S": "Otterbein","T": "Inner Harbor Water Taxi Dock"
+    "P": "Penn Station (Transit Hub)",
+    "A": "National Aquarium",
+    "B": "M&T Bank Stadium",
+    "C": "Convention Center (Light Rail Stop)",
+    "D": "Fells Point",
+    "E": "Federal Hill",
+    "F": "Fort McHenry",
+    "G": "Harbor East",
+    "H": "Harbor Point",
+    "I": "Inner Harbor (Harborplace)",
+    "J": "Jonestown",
+    "K": "Locust Point / Ferry Area",
+    "L": "Little Italy",
+    "M": "Mount Vernon",
+    "O": "Oriole Park / Camden Yards (alt)",
+    "Q": "Lexington Market / Downtown",
+    "R": "Ridgely's Delight",
+    "S": "Otterbein",
+    "T": "Inner Harbor Water Taxi Dock"
 }
 
 NODE_COORDS = {
